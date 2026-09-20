@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Playbox's own import folder, so shared files get a content:// uri -->
+    <external-files-path name="playbox_videos" path="Videos/" />
+</paths>

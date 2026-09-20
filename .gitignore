@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Android build output
+Android/build/
+Android/app/build/
+Android/.gradle/
+Android/.idea/
+Android/captures/
+Android/*.iml
+
+# Machine-specific: absolute path to the SDK on this Mac
+Android/local.properties
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/

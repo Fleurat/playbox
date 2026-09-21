@@ -108,6 +108,7 @@ import com.example.playbox.ui.components.Avatar
 import com.example.playbox.ui.components.PillButton
 import com.example.playbox.ui.components.Scrubber
 import com.example.playbox.ui.components.ThinProgress
+import com.example.playbox.ui.components.VideoThumbnail
 import com.example.playbox.ui.components.VideoRow
 import com.example.playbox.ui.theme.Playbox
 import kotlinx.coroutines.delay
@@ -908,10 +909,14 @@ private fun Details(
 // -------------------------------------------------------------- up next panel
 
 /**
- * Slides up over the fullscreen video: the queue first, then everything else in
- * the library, so there is always something to pick even with an empty queue.
- * Picking from the queue keeps the queue; picking from further down rebuilds it
- * around the choice.
+ * Slides up over the fullscreen video as a horizontal strip of cards: the queue
+ * first, then everything else in the library, so there is always something to
+ * pick even with an empty queue. Picking from the queue keeps the queue;
+ * picking from the library rebuilds it around the choice.
+ *
+ * The height wraps its content instead of taking a fraction of the screen —
+ * landscape has very little height to spare, and a strip only needs one card's
+ * worth, which leaves the top of the video visible behind it.
  */
 @Composable
 private fun UpNextPanel(
@@ -923,128 +928,142 @@ private fun UpNextPanel(
     val queued = playback.upNext
     val queuedIds = queued.map { it.id }.toSet()
     val others = library.videos.filter { it.id != currentId && it.id !in queuedIds }
+    val picks = queued + others
 
     Column(
         Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.74f)
             .background(
-                Playbox.Background,
+                Playbox.Background.copy(alpha = 0.96f),
                 RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             )
             .displayCutoutPadding(),
     ) {
-        // Grab handle — dragging it back down closes the panel.
-        Box(
+        // Handle and header carry the drag-to-dismiss. Keeping it off the strip
+        // itself means it can never fight the row's horizontal scrolling.
+        Column(
             Modifier
                 .fillMaxWidth()
                 .pointerInput(Unit) {
                     detectVerticalDragGestures { _, dragAmount ->
                         if (dragAmount > 14f) onDismiss()
                     }
-                }
-                .padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center,
+                },
         ) {
             Box(
+                Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Playbox.SecondaryText),
+                )
+            }
+
+            Row(
                 Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Playbox.SecondaryText),
-            )
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 12.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (queued.isEmpty()) "Other videos" else "Up next",
+                    color = Playbox.PrimaryText,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.weight(1f))
+
+                Icon(
+                    Icons.Default.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = if (playback.isShuffling) Playbox.Accent else Playbox.PrimaryText,
+                    modifier = Modifier
+                        .size(21.dp)
+                        .clickable { playback.isShuffling = !playback.isShuffling },
+                )
+                Spacer(Modifier.width(18.dp))
+                Icon(
+                    Icons.Default.Casino,
+                    contentDescription = "Play something random",
+                    tint = Playbox.PrimaryText,
+                    modifier = Modifier
+                        .size(21.dp)
+                        .clickable {
+                            playback.playRandom()
+                            onDismiss()
+                        },
+                )
+                Spacer(Modifier.width(18.dp))
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = Playbox.PrimaryText,
+                    modifier = Modifier.size(21.dp).clickable(onClick = onDismiss),
+                )
+            }
         }
 
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 12.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        if (picks.isEmpty()) {
             Text(
-                if (queued.isEmpty()) "Other videos" else "Up next",
-                color = Playbox.PrimaryText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                "Nothing else in your library yet.",
+                color = Playbox.SecondaryText,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(start = 16.dp, bottom = 18.dp),
             )
-            Spacer(Modifier.weight(1f))
-
-            Icon(
-                Icons.Default.Shuffle,
-                contentDescription = "Shuffle",
-                tint = if (playback.isShuffling) Playbox.Accent else Playbox.PrimaryText,
-                modifier = Modifier
-                    .size(22.dp)
-                    .clickable { playback.isShuffling = !playback.isShuffling },
-            )
-            Spacer(Modifier.width(18.dp))
-            Icon(
-                Icons.Default.Casino,
-                contentDescription = "Play something random",
-                tint = Playbox.PrimaryText,
-                modifier = Modifier
-                    .size(22.dp)
-                    .clickable {
-                        playback.playRandom()
-                        onDismiss()
-                    },
-            )
-            Spacer(Modifier.width(18.dp))
-            Icon(
-                Icons.Default.Close,
-                contentDescription = "Close",
-                tint = Playbox.PrimaryText,
-                modifier = Modifier.size(22.dp).clickable(onClick = onDismiss),
-            )
-        }
-
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp),
-        ) {
-            items(queued, key = { "q-${it.id}" }) { item ->
-                VideoRow(
-                    video = item,
-                    onPlay = {
-                        playback.jumpTo(item)
-                        onDismiss()
-                    },
-                )
-            }
-
-            if (queued.isNotEmpty() && others.isNotEmpty()) {
-                item {
-                    Text(
-                        "From your library",
-                        color = Playbox.SecondaryText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 4.dp),
-                    )
-                }
-            }
-
-            items(others, key = { "l-${it.id}" }) { item ->
-                VideoRow(
-                    video = item,
-                    onPlay = {
-                        // Not in the queue, so start a new one around this pick.
-                        playback.play(item, others)
-                        onDismiss()
-                    },
-                )
-            }
-
-            if (queued.isEmpty() && others.isEmpty()) {
-                item {
-                    Text(
-                        "Nothing else in your library yet.",
-                        color = Playbox.SecondaryText,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(16.dp),
+        } else {
+            LazyRow(
+                Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(picks, key = { it.id }) { item ->
+                    UpNextCard(
+                        video = item,
+                        inQueue = item.id in queuedIds,
+                        onPlay = {
+                            if (item.id in queuedIds) playback.jumpTo(item)
+                            else playback.play(item, picks)
+                            onDismiss()
+                        },
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun UpNextCard(
+    video: Video,
+    inQueue: Boolean,
+    onPlay: () -> Unit,
+) {
+    Column(
+        Modifier
+            .width(172.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onPlay),
+    ) {
+        VideoThumbnail(video = video, aspect = 16f / 9f, corner = 10.dp)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            video.title,
+            color = Playbox.PrimaryText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            if (inQueue) "In queue" else video.bucket,
+            color = if (inQueue) Playbox.Accent else Playbox.SecondaryText,
+            fontSize = 10.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

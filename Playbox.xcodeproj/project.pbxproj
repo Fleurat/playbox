@@ -55,7 +55,7 @@
 		A13D18F9550063FD37731D13 /* VideoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCard.swift; sourceTree = "<group>"; };
 		BFDDC273107FFABA40A9D181 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C22E88F119FC791688D32B4F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		C41F80B9B6CA96FAFD3AA4AD /* Playbox.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Playbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C41F80B9B6CA96FAFD3AA4AD /* Playbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Playbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4CE31C10C759B39A840CF5A /* VideoImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImporter.swift; sourceTree = "<group>"; };
 		EBAF6D11BFB73AA2B999742F /* ShortPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortPage.swift; sourceTree = "<group>"; };
 		EC0DD5C0FF90FA1FDF9DA75C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -180,7 +180,6 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					F9CD50707B11C276D68A6C26 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -318,12 +317,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 78XAN423DG;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Playbox;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fleurat.playbox;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -405,12 +405,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 78XAN423DG;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Playbox;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fleurat.playbox;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

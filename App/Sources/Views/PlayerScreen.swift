@@ -17,12 +17,6 @@ struct SeekFlashInfo: Equatable {
     var token = UUID()
 }
 
-struct PlaybackHUD: Equatable {
-    enum Kind { case brightness, volume }
-    var kind: Kind
-    var value: Double
-}
-
 struct PlayerScreen: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var playback: PlaybackController
@@ -36,8 +30,8 @@ struct PlayerScreen: View {
     @State private var seekFlash: SeekFlashInfo?
     @State private var isBoosting = false
     @State private var showingQueue = false
+    @State private var showingPicker = false
     @State private var showingActions = false
-    @State private var hud: PlaybackHUD?
     @State private var scrubAnchor: Double = 0
 
     private var video: Video? {
@@ -54,8 +48,20 @@ struct PlayerScreen: View {
 
                 if let video {
                     if isLandscape {
-                        videoSurface(size: geo.size, landscape: true, video: video)
-                            .ignoresSafeArea()
+                        ZStack(alignment: .bottom) {
+                            videoSurface(size: geo.size, landscape: true, video: video)
+                                .ignoresSafeArea()
+
+                            if showingPicker {
+                                Color.black.opacity(0.55)
+                                    .ignoresSafeArea()
+                                    .onTapGesture {
+                                        withAnimation(.easeOut(duration: 0.2)) { showingPicker = false }
+                                    }
+                                upNextPanel
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
+                        }
                     } else {
                         VStack(spacing: 0) {
                             videoSurface(
@@ -121,8 +127,6 @@ struct PlayerScreen: View {
                     .frame(maxHeight: .infinity, alignment: .top)
                     .padding(.top, 24)
             }
-
-            if let hud { HUDBadge(hud: hud) }
 
             if controlsVisible {
                 controlsOverlay(landscape: landscape, video: video)
@@ -426,6 +430,123 @@ struct PlayerScreen: View {
         }
     }
 
+    // MARK: - Fullscreen up next
+
+    /// Horizontal strip over the landscape video: the queue first, then the
+    /// rest of the library, so there is always something to pick. Its height
+    /// wraps its content rather than taking a fraction of the screen — landscape
+    /// has little height to spare, and one row of cards leaves the top of the
+    /// video visible behind it.
+    private var upNextPanel: some View {
+        let queued = playback.upNext
+        let queuedIDs = Set(queued.map(\.id))
+        let others = library.videos.filter {
+            $0.id != playback.current?.id && !queuedIDs.contains($0.id)
+        }
+        let picks = queued + others
+
+        return VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(Theme.secondaryText)
+                    .frame(width: 36, height: 4)
+                    .padding(.vertical, 8)
+
+                HStack(spacing: 18) {
+                    Text(queued.isEmpty ? "Other videos" : "Up next")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.primaryText)
+
+                    Spacer()
+
+                    Button {
+                        playback.isShuffling.toggle()
+                    } label: {
+                        Image(systemName: "shuffle")
+                            .foregroundStyle(playback.isShuffling ? Theme.accent : Theme.primaryText)
+                    }
+                    Button {
+                        playback.playRandom()
+                        closePicker()
+                    } label: {
+                        Image(systemName: "dice")
+                            .foregroundStyle(Theme.primaryText)
+                    }
+                    Button(action: closePicker) {
+                        Image(systemName: "xmark")
+                            .foregroundStyle(Theme.primaryText)
+                    }
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+            // Drag-to-dismiss sits on the handle and header only, so it can
+            // never compete with the strip's horizontal scrolling.
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 10)
+                    .onEnded { value in
+                        if value.translation.height > 30 { closePicker() }
+                    }
+            )
+
+            if picks.isEmpty {
+                Text("Nothing else in your library yet.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 18)
+            } else {
+                ScrollView(.horizontal) {
+                    HStack(alignment: .top, spacing: 10) {
+                        ForEach(picks) { item in
+                            upNextCard(item, inQueue: queuedIDs.contains(item.id))
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+        .background(Theme.background.opacity(0.96))
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
+    }
+
+    private func upNextCard(_ item: Video, inQueue: Bool) -> some View {
+        Button {
+            if inQueue {
+                playback.jump(to: item)
+            } else {
+                playback.play(item, in: library.videos)
+            }
+            closePicker()
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                VideoThumbnail(video: item, aspect: 16 / 9, cornerRadius: 10)
+                    .frame(width: 172)
+                Text(item.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.primaryText)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                Text(inQueue ? "In queue" : item.source)
+                    .font(.system(size: 10))
+                    .foregroundStyle(inQueue ? Theme.accent : Theme.secondaryText)
+                    .lineLimit(1)
+            }
+            .frame(width: 172, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func closePicker() {
+        withAnimation(.easeOut(duration: 0.2)) { showingPicker = false }
+    }
+
     // MARK: - Gesture handling
 
     private func handleDoubleTap(at location: CGPoint, width: CGFloat) {
@@ -471,7 +592,8 @@ struct PlayerScreen: View {
                 }
 
                 if landscape {
-                    adjustHUD(value: value, size: size)
+                    // Accumulate; the decision happens on release.
+                    dismissDrag = value.translation.height
                 } else if value.translation.height > 0 {
                     dismissDrag = value.translation.height
                 }
@@ -486,9 +608,21 @@ struct PlayerScreen: View {
                     return
                 }
 
-                withAnimation(.easeOut(duration: 0.25)) { hud = nil }
-
-                if landscape { return }
+                if landscape {
+                    // Same vertical grammar as the Shorts feed and the Android
+                    // build: up reveals the strip, down steps back a video.
+                    let predicted = value.predictedEndTranslation.height
+                    if predicted < -90 {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                            showingPicker = true
+                        }
+                    } else if predicted > 90 {
+                        playback.previousTrack()
+                        showControls()
+                    }
+                    dismissDrag = 0
+                    return
+                }
 
                 if value.predictedEndTranslation.height > 140 || dismissDrag > size.height * 0.45 {
                     playback.minimize()
@@ -501,20 +635,6 @@ struct PlayerScreen: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { dismissDrag = 0 }
                 }
             }
-    }
-
-    /// Landscape only: left half is brightness, right half is volume.
-    private func adjustHUD(value: DragGesture.Value, size: CGSize) {
-        let delta = -value.translation.height / max(size.height, 1) * 1.4
-        if value.startLocation.x < size.width / 2 {
-            let next = min(1, max(0, Double(UIScreen.main.brightness) + delta * 0.06))
-            UIScreen.main.brightness = CGFloat(next)
-            hud = PlaybackHUD(kind: .brightness, value: next)
-        } else {
-            let next = min(1, max(0, Double(playback.volume) + delta * 0.06))
-            playback.volume = Float(next)
-            hud = PlaybackHUD(kind: .volume, value: next)
-        }
     }
 
     // MARK: - Helpers
@@ -618,24 +738,6 @@ private struct SeekRipple: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.55)) { animate = true }
         }
-    }
-}
-
-private struct HUDBadge: View {
-    let hud: PlaybackHUD
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: hud.kind == .brightness ? "sun.max.fill" : "speaker.wave.2.fill")
-                .font(.system(size: 20))
-            ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.25)).frame(width: 90, height: 4)
-                Capsule().fill(.white).frame(width: 90 * hud.value, height: 4)
-            }
-        }
-        .foregroundStyle(.white)
-        .padding(18)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 

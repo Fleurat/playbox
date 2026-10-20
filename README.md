@@ -69,8 +69,8 @@ down always retraces the exact path you took, even in shuffle mode.
 | Drag down | Shrink to the mini player |
 | Drag up | Open the queue |
 | Pinch | Fit ⇄ fill |
-| Drag ↑↓ left half *(landscape)* | Brightness |
-| Drag ↑↓ right half *(landscape)* | Volume |
+| Swipe up *(landscape)* | Slide up the picker: choose what plays next |
+| Swipe down *(landscape)* | The previous video — not a rewind |
 
 **Mini player**: tap to expand, swipe up to expand, swipe down to close.
 

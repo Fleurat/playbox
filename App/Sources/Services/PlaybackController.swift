@@ -264,6 +264,18 @@ final class PlaybackController: ObservableObject {
         }
     }
 
+    /// Swipe-down in fullscreen: always the previous video, never a rewind.
+    /// `previous()` keeps its rewind-first behaviour, which is right for a button.
+    func previousTrack() {
+        guard !queue.isEmpty else { return }
+        if queueIndex > 0 {
+            queueIndex -= 1
+            load(queue[queueIndex], startAt: 0)
+        } else {
+            seek(to: 0)
+        }
+    }
+
     func playRandom() {
         guard !queue.isEmpty else { return }
         loadNextFromBag()

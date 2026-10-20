@@ -2,6 +2,7 @@ import AVFoundation
 import CoreTransferable
 import Foundation
 import PhotosUI
+import SwiftUI
 import UniformTypeIdentifiers
 
 /// A movie pulled out of the photo picker. `loadTransferable` hands us a file

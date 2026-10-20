@@ -1,6 +1,7 @@
 package com.example.playbox.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -204,18 +205,20 @@ private fun TopBar(library: LibraryStore, onSearch: () -> Unit) {
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // An outlined box around a play mark — a "play box". Deliberately unlike
+        // a solid red rectangle with a white triangle, which is someone else's
+        // trademark.
         Box(
             Modifier
-                .size(width = 26.dp, height = 19.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Playbox.Accent),
+                .size(24.dp)
+                .border(2.dp, Playbox.Accent, RoundedCornerShape(7.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Default.PlayArrow,
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(14.dp),
+                tint = Playbox.Accent,
+                modifier = Modifier.size(13.dp),
             )
         }
         Spacer(Modifier.width(6.dp))

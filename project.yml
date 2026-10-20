@@ -27,7 +27,7 @@ targets:
       - App/Assets.xcassets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.Playbox
+        PRODUCT_BUNDLE_IDENTIFIER: com.fleurat.playbox
         INFOPLIST_FILE: App/Info.plist
         TARGETED_DEVICE_FAMILY: "1,2"
 

@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 private struct BottomChromeKey: EnvironmentKey {
@@ -27,6 +28,12 @@ struct RootView: View {
     @State private var showingFileImporter = false
     @State private var showingPhotoPicker = false
     @State private var photoSelection: [PhotosPickerItem] = []
+
+    /// Don't let the screen dim while anything is playing. The Shorts tab
+    /// autoplays whatever is on screen, so it counts too.
+    private var keepAwake: Bool {
+        playback.isPlaying || tab == .shorts
+    }
 
     private var chromeHeight: CGFloat {
         TabBar.height + (playback.presentation == .mini ? MiniPlayerBar.height : 0)
@@ -68,6 +75,12 @@ struct RootView: View {
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: playback.presentation)
         .onChange(of: tab) { _, newValue in
             if newValue == .shorts { playback.suspendForShorts() }
+        }
+        .onChange(of: keepAwake) { _, value in
+            UIApplication.shared.isIdleTimerDisabled = value
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         .confirmationDialog("Add videos", isPresented: $showingImportChoice, titleVisibility: .visible) {
             Button("Import from Photos") { showingPhotoPicker = true }

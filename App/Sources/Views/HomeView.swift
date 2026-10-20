@@ -158,13 +158,16 @@ struct TopBar: View {
     var body: some View {
         HStack(spacing: 14) {
             HStack(spacing: 6) {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Theme.accent)
-                    .frame(width: 26, height: 19)
+                // An outlined box around a play mark — a "play box". Deliberately
+                // unlike a solid red rectangle with a white triangle, which is
+                // someone else's trademark.
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(Theme.accent, lineWidth: 2.5)
+                    .frame(width: 24, height: 24)
                     .overlay {
                         Image(systemName: "play.fill")
-                            .font(.system(size: 9, weight: .black))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Theme.accent)
                     }
                 Text("Playbox")
                     .font(.system(size: 19, weight: .heavy))
